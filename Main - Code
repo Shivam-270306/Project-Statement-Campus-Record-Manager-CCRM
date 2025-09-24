@@ -1,0 +1,704 @@
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+// This is the main class representing the entire application.
+public class CCRM {
+
+    // Labeled loop to demonstrate a jump control
+    public static void runCliLoop() {
+        main_loop:
+        while (true) {
+            System.out.println("Main Menu:");
+            System.out.println("1. Manage Students");
+            System.out.println("2. Manage Courses");
+            System.out.println("3. Manage Enrollments & Grades");
+            System.out.println("4. File Operations");
+            System.out.println("5. Show Reports");
+            System.out.println("6. Exit");
+            System.out.print("Enter your choice: ");
+
+            Scanner scanner = new Scanner(System.in);
+            String choice = scanner.next();
+
+            switch (choice) {
+                case "1":
+                    // ... Student management logic ...
+                    break;
+                case "2":
+                    // ... Course management logic ...
+                    break;
+                case "3":
+                    // ... Enrollment/grading logic ...
+                    break;
+                case "4":
+                    // ... File operations logic ...
+                    break;
+                case "5":
+                    // ... Reports logic ...
+                    break;
+                case "6":
+                    System.out.println("Exiting CCRM. Goodbye!");
+                    break main_loop; // Labeled jump
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        System.out.println("*");
+        System.out.println("Welcome to Campus Course & Records Manager (CCRM)");
+        System.out.println("*");
+
+        // 1. On start, AppConfig (Singleton) loads config.
+        AppConfig config = AppConfig.getInstance();
+        System.out.println("Configuration loaded from: " + config.getDataPath());
+
+        // Demonstrating primitive variables, objects, and operators
+        int studentCount = 0;
+        boolean hasData = false;
+        double gpa = 0.0;
+        String appName = "CCRM";
+
+        // Bitwise operator example
+        int flags = 0b0010;
+        int FLAG_READ = 0b0001;
+        int FLAG_WRITE = 0b0010;
+        boolean canWrite = (flags & FLAG_WRITE) != 0; // Bitwise AND
+        System.out.println("Can write: " + canWrite);
+
+        // Operator Precedence: * before +
+        int result = 5 + 3 * 2;
+        System.out.println("5 + 3 * 2 = " + result); // result is 11
+
+        // Use a simple menu loop
+        Scanner scanner = new Scanner(System.in);
+        int choice;
+
+        while (true) {
+            System.out.println("\n--- CCRM Main Menu ---");
+            System.out.println("1. Manage Students");
+            System.out.println("2. Manage Courses");
+            System.out.println("3. Manage Enrollments & Grades");
+            System.out.println("4. File Operations");
+            System.out.println("5. Reports");
+            System.out.println("6. Exit");
+            System.out.print("Enter your choice: ");
+
+            try {
+                choice = scanner.nextInt();
+                if (choice == 6) {
+                    System.out.println("Exiting CCRM. Goodbye!");
+                    break; // break from the loop
+                }
+                
+                switch (choice) { // enhanced switch
+                    case 1 -> {
+                        System.out.println("\n--- Student Management ---");
+                        // Add more sample students to demonstrate the system
+                        Student student1 = new Student.StudentBuilder()
+                            .id("S101")
+                            .regNo("REG101")
+                            .fullName("Jane Doe")
+                            .email("jane@example.com")
+                            .status(Student.Status.ACTIVE)
+                            .build();
+                        StudentService.addStudent(student1);
+
+                        Student student2 = new Student.StudentBuilder()
+                            .id("S102")
+                            .regNo("REG102")
+                            .fullName("John Smith")
+                            .email("john@example.com")
+                            .status(Student.Status.ACTIVE)
+                            .build();
+                        StudentService.addStudent(student2);
+
+                        Student student3 = new Student.StudentBuilder()
+                            .id("S103")
+                            .regNo("REG103")
+                            .fullName("Alice Johnson")
+                            .email("alice@example.com")
+                            .status(Student.Status.INACTIVE)
+                            .build();
+                        StudentService.addStudent(student3);
+                        
+                        StudentService.listAllStudents();
+                    }
+                    case 2 -> {
+                        System.out.println("\n--- Course Management ---");
+                        // Demonstrating Builder pattern for Course
+                        Course javaCourse = new Course.CourseBuilder("CS101", "Intro to Java")
+                            .credits(4)
+                            .instructor(new Instructor("I001", "Dr. Smith"))
+                            .semester(Semester.FALL)
+                            .department("Computer Science")
+                            .build();
+                        CourseService.addCourse(javaCourse);
+
+                        Course historyCourse = new Course.CourseBuilder("HIST205", "World History")
+                            .credits(3)
+                            .instructor(new Instructor("I002", "Ms. Williams"))
+                            .semester(Semester.SPRING)
+                            .department("Humanities")
+                            .build();
+                        CourseService.addCourse(historyCourse);
+
+                        Course bioCourse = new Course.CourseBuilder("BIO301", "Cellular Biology")
+                            .credits(5)
+                            .instructor(new Instructor("I003", "Dr. Chen"))
+                            .semester(Semester.FALL)
+                            .department("Biology")
+                            .build();
+                        CourseService.addCourse(bioCourse);
+
+                        CourseService.listAllCourses();
+                    }
+                    case 3 -> {
+                        System.out.println("\n--- Enrollment & Grading ---");
+                        // Sample enrollment
+                        Student student = StudentService.findStudentByRegNo("REG101");
+                        Course course = CourseService.findCourseByCode("CS101");
+
+                        if (student != null && course != null) {
+                            try {
+                                EnrollmentService.enrollStudent(student, course);
+                                System.out.println("Successfully enrolled " + student.getFullName() + " in " + course.getTitle());
+                                
+                                // Record grades
+                                Enrollment enrollment = EnrollmentService.getEnrollment(student, course);
+                                enrollment.recordMarks(85, "Midterm");
+                                enrollment.recordMarks(92, "Final");
+                                enrollment.computeGradeAndGPA();
+                                System.out.println("Grade for " + student.getFullName() + " in " + course.getTitle() + ": " + enrollment.getGrade());
+                                
+                                // Print transcript using polymorphism and toString() overrides
+                                System.out.println("\n--- Transcript for " + student.getFullName() + " ---");
+                                System.out.println(student); // Uses Person's toString()
+                                System.out.println("\nCourses:");
+                                for (Enrollment e : student.getEnrolledCourses()) {
+                                    System.out.println(e); // Uses Enrollment's toString()
+                                    // Demonstrate polymorphism and toString() override
+                                    Person p = new Student.StudentBuilder().id("temp").build(); // Upcast
+                                    System.out.println("Person's toString(): " + p);
+                                }
+                            } catch (Exception e) {
+                                System.err.println("Error during enrollment: " + e.getMessage());
+                            }
+                        }
+                    }
+                    case 4 -> {
+                        System.out.println("\n--- File Operations ---");
+                        // Export data
+                        FileIO.exportData();
+
+                        // Backup
+                        BackupService.createBackup();
+
+                        // Recursive utility
+                        try {
+                            long size = BackupService.getBackupDirectorySize();
+                            System.out.println("Total size of backup directory: " + size + " bytes.");
+                        } catch (IOException e) {
+                            System.err.println("Error getting backup size: " + e.getMessage());
+                        }
+                    }
+                    case 5 -> {
+                        System.out.println("\n--- Reports ---");
+                        System.out.println("1. List students by active status");
+                        System.out.println("2. Search courses by instructor");
+                        System.out.print("Enter report choice: ");
+                        int reportChoice = scanner.nextInt();
+                        if (reportChoice == 1) {
+                            System.out.println("Active Students:");
+                            // Lambda for filtering and stream pipeline
+                            StudentService.getStudents().stream()
+                                    .filter(s -> s.getStatus() == Student.Status.ACTIVE)
+                                    .forEach(System.out::println);
+                        } else if (reportChoice == 2) {
+                            System.out.print("Enter instructor name to search: ");
+                            String instructorName = scanner.next();
+                            // Filter with a predicate lambda
+                            Predicate<Course> instructorMatch = course -> course.getInstructor().getFullName().equalsIgnoreCase(instructorName);
+                            CourseService.getCourses().stream()
+                                    .filter(instructorMatch)
+                                    .forEach(System.out::println);
+                        }
+                    }
+                    default -> System.out.println("Invalid option. Please try again.");
+                }
+
+                // continue statement
+                if (choice < 1 || choice > 6) {
+                    continue; // Skip to next iteration if invalid choice
+                }
+            } catch (InputMismatchException e) {
+                System.err.println("Invalid input. Please enter a number.");
+                scanner.next(); // Consume the invalid input
+            }
+        }
+    }
+
+    // --- Package: edu.ccrm.config ---
+    // Singleton Design Pattern
+    public static class AppConfig {
+        private static AppConfig instance;
+        private final String dataPath = "ccrm_data";
+
+        private AppConfig() {
+            // Private constructor to prevent instantiation
+        }
+
+        public static AppConfig getInstance() {
+            if (instance == null) {
+                instance = new AppConfig();
+            }
+            return instance;
+        }
+
+        public String getDataPath() {
+            return dataPath;
+        }
+    }
+
+    // --- Package: edu.ccrm.domain ---
+    // Abstract class for Inheritance and Abstraction
+    public static abstract class Person {
+        protected final String id;
+        protected String fullName;
+
+        public Person(String id, String fullName) {
+            this.id = id;
+            this.fullName = fullName;
+        }
+
+        public String getId() { return id; }
+        public String getFullName() { return fullName; }
+
+        public abstract String getDetails();
+
+        @Override
+        public String toString() {
+            return "ID: " + this.id + ", Name: " + this.fullName;
+        }
+    }
+
+    // Class Inheritance: Student extends Person
+    public static class Student extends Person {
+        private final String regNo;
+        private String email;
+        private Status status;
+        private LocalDate enrollmentDate;
+        private List<Enrollment> enrolledCourses;
+
+        // Custom enum
+        public enum Status { ACTIVE, INACTIVE, DECEASED }
+
+        // Builder pattern for Student
+        public static class StudentBuilder {
+            private String id;
+            private String regNo;
+            private String fullName;
+            private String email;
+            private Status status = Status.ACTIVE; // Default
+            
+            public StudentBuilder id(String id) { this.id = id; return this; }
+            public StudentBuilder regNo(String regNo) { this.regNo = regNo; return this; }
+            public StudentBuilder fullName(String fullName) { this.fullName = fullName; return this; }
+            public StudentBuilder email(String email) { this.email = email; return this; }
+            public StudentBuilder status(Status status) { this.status = status; return this; }
+            
+            public Student build() {
+                assert id != null && regNo != null && fullName != null : "Student fields cannot be null";
+                return new Student(this);
+            }
+        }
+
+        private Student(StudentBuilder builder) {
+            super(builder.id, builder.fullName);
+            this.regNo = builder.regNo;
+            this.email = builder.email;
+            this.status = builder.status;
+            this.enrolledCourses = new ArrayList<>();
+            this.enrollmentDate = LocalDate.now();
+        }
+
+        public String getRegNo() { return regNo; }
+        public String getEmail() { return email; }
+        public Status getStatus() { return status; }
+        public List<Enrollment> getEnrolledCourses() { return enrolledCourses; }
+
+        @Override
+        public String getDetails() {
+            return "Student: " + this.fullName + " (RegNo: " + this.regNo + ")";
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Student [ID=%s, RegNo=%s, Name=%s, Email=%s, Status=%s]", id, regNo, fullName, email, status);
+        }
+    }
+
+    // Instructor class for Inheritance
+    public static class Instructor extends Person {
+        public Instructor(String id, String fullName) {
+            super(id, fullName);
+        }
+
+        @Override
+        public String getDetails() {
+            return "Instructor: " + this.fullName;
+        }
+    }
+
+    public static class Course {
+        private String code;
+        private String title;
+        private int credits;
+        private Instructor instructor;
+        private Semester semester;
+        private String department;
+
+        private Course(CourseBuilder builder) {
+            this.code = builder.code;
+            this.title = builder.title;
+            this.credits = builder.credits;
+            this.instructor = builder.instructor;
+            this.semester = builder.semester;
+            this.department = builder.department;
+        }
+        
+        // Builder Design Pattern for Course
+        public static class CourseBuilder {
+            private String code;
+            private String title;
+            private int credits;
+            private Instructor instructor;
+            private Semester semester;
+            private String department;
+
+            public CourseBuilder(String code, String title) {
+                this.code = code;
+                this.title = title;
+            }
+
+            public CourseBuilder credits(int credits) {
+                this.credits = credits;
+                return this;
+            }
+
+            public CourseBuilder instructor(Instructor instructor) {
+                this.instructor = instructor;
+                return this;
+            }
+
+            public CourseBuilder semester(Semester semester) {
+                this.semester = semester;
+                return this;
+            }
+
+            public CourseBuilder department(String department) {
+                this.department = department;
+                return this;
+            }
+
+            public Course build() {
+                return new Course(this);
+            }
+        }
+
+        public String getCode() { return code; }
+        public String getTitle() { return title; }
+        public int getCredits() { return credits; }
+        public Instructor getInstructor() { return instructor; }
+        public Semester getSemester() { return semester; }
+        public String getDepartment() { return department; }
+        
+        @Override
+        public String toString() {
+            return String.format("Course [Code=%s, Title=%s, Credits=%d, Instructor=%s]", code, title, credits, instructor.getFullName());
+        }
+    }
+
+    public static class Enrollment {
+        private final Student student;
+        private final Course course;
+        private Grade grade;
+        private Map<String, Double> marks;
+        private LocalDateTime enrollmentDateTime;
+
+        public Enrollment(Student student, Course course) {
+            this.student = student;
+            this.course = course;
+            this.marks = new HashMap<>();
+            this.enrollmentDateTime = LocalDateTime.now();
+        }
+
+        public Student getStudent() { return student; }
+        public Course getCourse() { return course; }
+        public Grade getGrade() { return grade; }
+        public LocalDateTime getEnrollmentDateTime() { return enrollmentDateTime; }
+
+        public void recordMarks(double mark, String assessment) {
+            marks.put(assessment, mark);
+        }
+
+        public void computeGradeAndGPA() {
+            if (marks.isEmpty()) {
+                this.grade = Grade.F; // Fail if no marks
+                return;
+            }
+            double averageMark = marks.values().stream()
+                    .mapToDouble(d -> d)
+                    .average()
+                    .orElse(0.0);
+
+            if (averageMark >= 90) this.grade = Grade.S;
+            else if (averageMark >= 80) this.grade = Grade.A;
+            else if (averageMark >= 70) this.grade = Grade.B;
+            else if (averageMark >= 60) this.grade = Grade.C;
+            else if (averageMark >= 50) this.grade = Grade.D;
+            else this.grade = Grade.F;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Enrollment [Course=%s, Grade=%s, Enrollment Date=%s]", course.getTitle(), grade, enrollmentDateTime);
+        }
+    }
+
+    // Enums with constructors and fields
+    public enum Semester {
+        SPRING("Spring"),
+        SUMMER("Summer"),
+        FALL("Fall");
+
+        private final String displayName;
+
+        Semester(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+    }
+
+    public enum Grade {
+        S(10.0), A(9.0), B(8.0), C(7.0), D(6.0), F(0.0);
+
+        private final double gradePoint;
+
+        Grade(double gradePoint) {
+            this.gradePoint = gradePoint;
+        }
+
+        public double getGradePoint() {
+            return gradePoint;
+        }
+    }
+    
+    // An immutable value class with final fields
+    public static final class CourseCode {
+        private final String code;
+        private final String department;
+
+        public CourseCode(String code, String department) {
+            this.code = code;
+            this.department = department;
+        }
+
+        public String getCode() {
+            return code;
+        }
+        
+        // Defensive copying is not needed for immutable types, but a good practice
+        // for complex objects. This is a simple String example.
+    }
+
+    // --- Package: edu.ccrm.util ---
+    // Interface with default method to resolve diamond problem
+    public interface Searchable<T> {
+        boolean search(String query);
+
+        default void printFound(T result) {
+            System.out.println("Found: " + result);
+        }
+    }
+
+    // Demonstrating recursive utility to calculate directory size
+    public static class RecursiveUtility {
+        public static long getDirectorySize(Path dir) throws IOException {
+            try (Stream<Path> files = Files.walk(dir)) {
+                return files
+                        .filter(Files::isRegularFile)
+                        .mapToLong(p -> {
+                            try {
+                                return Files.size(p);
+                            } catch (IOException e) {
+                                return 0L;
+                            }
+                        })
+                        .sum();
+            }
+        }
+    }
+    
+    // --- Package: edu.ccrm.service ---
+    public static class StudentService {
+        private static final List<Student> students = new ArrayList<>();
+
+        public static void addStudent(Student student) {
+            students.add(student);
+        }
+
+        public static void listAllStudents() {
+            System.out.println("All Students:");
+            students.forEach(System.out::println);
+        }
+        
+        public static Student findStudentByRegNo(String regNo) {
+            return students.stream()
+                           .filter(s -> s.getRegNo().equals(regNo))
+                           .findFirst()
+                           .orElse(null);
+        }
+        
+        public static List<Student> getStudents() {
+            return students;
+        }
+    }
+    
+    public static class CourseService {
+        private static final List<Course> courses = new ArrayList<>();
+        
+        public static void addCourse(Course course) {
+            courses.add(course);
+        }
+        
+        public static void listAllCourses() {
+            System.out.println("All Courses:");
+            courses.forEach(System.out::println);
+        }
+        
+        public static Course findCourseByCode(String code) {
+            return courses.stream()
+                           .filter(c -> c.getCode().equals(code))
+                           .findFirst()
+                           .orElse(null);
+        }
+        
+        public static List<Course> getCourses() {
+            return courses;
+        }
+    }
+
+    public static class EnrollmentService {
+        private static final Map<String, Enrollment> enrollments = new HashMap<>();
+        
+        public static void enrollStudent(Student student, Course course) throws DuplicateEnrollmentException, MaxCreditLimitExceededException {
+            if (enrollments.containsKey(student.getId() + ":" + course.getCode())) {
+                throw new DuplicateEnrollmentException("Student " + student.getFullName() + " is already enrolled in " + course.getTitle());
+            }
+
+            int currentCredits = student.getEnrolledCourses().stream().mapToInt(e -> e.getCourse().getCredits()).sum();
+            int maxCreditsPerSemester = 15;
+            if (currentCredits + course.getCredits() > maxCreditsPerSemester) {
+                throw new MaxCreditLimitExceededException("Cannot enroll. Student would exceed max credit limit.");
+            }
+
+            Enrollment enrollment = new Enrollment(student, course);
+            enrollments.put(student.getId() + ":" + course.getCode(), enrollment);
+            student.getEnrolledCourses().add(enrollment);
+        }
+        
+        public static Enrollment getEnrollment(Student student, Course course) {
+            return enrollments.get(student.getId() + ":" + course.getCode());
+        }
+    }
+
+    // --- Package: edu.ccrm.io ---
+    public static class FileIO {
+        private static final Path studentsPath = Paths.get("students.csv");
+        private static final Path coursesPath = Paths.get("courses.csv");
+        
+        public static void exportData() {
+            try {
+                // Export students to CSV
+                List<String> studentLines = StudentService.getStudents().stream()
+                        .map(s -> String.join(",", s.getId(), s.getRegNo(), s.getFullName(), s.getEmail(), s.getStatus().name()))
+                        .collect(Collectors.toList());
+                Files.write(studentsPath, studentLines);
+                System.out.println("Student data exported to " + studentsPath.toAbsolutePath());
+                
+                // Export courses to CSV
+                List<String> courseLines = CourseService.getCourses().stream()
+                        .map(c -> String.join(",", c.getCode(), c.getTitle(), String.valueOf(c.getCredits()), c.getInstructor().getFullName(), c.getSemester().name(), c.getDepartment()))
+                        .collect(Collectors.toList());
+                Files.write(coursesPath, courseLines);
+                System.out.println("Course data exported to " + coursesPath.toAbsolutePath());
+
+            } catch (IOException e) {
+                System.err.println("Failed to export data: " + e.getMessage());
+            }
+        }
+    }
+
+    public static class BackupService {
+        private static final Path backupBaseDir = Paths.get("ccrm_backups");
+
+        public static void createBackup() {
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            Path backupDir = backupBaseDir.resolve("backup_" + timestamp);
+            
+            try {
+                Files.createDirectories(backupDir);
+                
+                // Use a try-with-resources for the stream
+                try (Stream<Path> filesToCopy = Stream.of(Paths.get("students.csv"), Paths.get("courses.csv"))) {
+                     filesToCopy.forEach(filePath -> {
+                        try {
+                            if (Files.exists(filePath)) {
+                                Files.copy(filePath, backupDir.resolve(filePath.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+                            }
+                        } catch (IOException e) {
+                            System.err.println("Failed to copy " + filePath + ": " + e.getMessage());
+                        }
+                    });
+                }
+                
+                System.out.println("Backup created at: " + backupDir.toAbsolutePath());
+            } catch (IOException e) {
+                System.err.println("Failed to create backup directory: " + e.getMessage());
+            }
+        }
+
+        // Wrapper for the recursive utility
+        public static long getBackupDirectorySize() throws IOException {
+            return RecursiveUtility.getDirectorySize(backupBaseDir);
+        }
+    }
+
+    // --- Package: edu.ccrm.exception ---
+    // Custom checked exception
+    public static class DuplicateEnrollmentException extends Exception {
+        public DuplicateEnrollmentException(String message) {
+            super(message);
+        }
+    }
+
+    // Custom checked exception
+    public static class MaxCreditLimitExceededException extends Exception {
+        public MaxCreditLimitExceededException(String message) {
+            super(message);
+        }
+    }
+}
