@@ -85,25 +85,6 @@ CCRM/
 ├── ccrm_backups/          # Backup directory (generated at runtime)
 └── README.md
 
-🚀 How to Run
-
-Clone the Repository
-
-git clone https://github.com/your-username/ccrm.git
-cd ccrm
-
-
-Compile the Application
-
-javac CCRM.java
-
-
-Run the Application
-
-java CCRM
-
-
-Use the menu to manage students, courses, enrollments, and more.
 
 🏗️ Design Highlights
 
